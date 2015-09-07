@@ -1,4 +1,8 @@
-; code from class
+; code from in class and out of class
+(define (avg-iter sum L num)
+        (if (null? L) (/ sum num)
+            (avg-iter (+ sum (car L)) (cdr L) (+ num 1))))
+(define (average L) (avg-iter 0 L 0))
 (define (square x) (* x x))
 ; mapping functions to lists
 (define (map f L) (if (null? L) L
@@ -40,3 +44,7 @@
                              ((null? L2) L1)
                              ((< (car L1) (car L2)) (cons (car L1) (merge (list (cdr L1) L2))))
                              (#t (cons (car L2) (merge (list L1 (cdr L2))))))))
+; find m^n, n >= 0 (for integers)
+(define (power m n) (cond ((= n 0) 1)
+                          ((= n 1) m)
+                          (#t (* m (power m (- n 1))))))
