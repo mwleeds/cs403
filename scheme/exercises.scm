@@ -21,6 +21,9 @@
 (define (filter f L) (if (null? L) L
                          (if (f (car L)) (cons (car L) (filter f (cdr L)))
                              (filter f (cdr L)))))
+(define (reject f L) (if (null? L) L
+                         (if (f (car L)) (reject f (cdr L))
+                             (cons (car L) (reject f (cdr L))))))
 
 ; tree traversal
 ; nodes are (value (left_subtree) (right_subtree))
@@ -122,3 +125,34 @@
                               (append (quicksort low gt?)
                                       (list (car l))
                                       (quicksort high gt?))))))
+
+; seach a Binary Search Tree for a value
+(define (member? x T) (cond ((null? T) #f)
+                            ((eqv? x (car T)) #t)
+                            ((< x (car T)) (member? x (left T)))
+                            (else (member? x (right T)))))
+
+; insert a value into a Binary Search Tree (assume no duplicates)
+(define (insert x T) (cond ((null? T) (list x))
+                           ((< x (car T)) (list (car T) (insert x (left T)) (right T)))
+                           (#t (list (car T) (left T) (insert x (right T))))))
+
+; remove a value from a Binary Search Tree
+(define (remove x T) (cond ((null? T) T)
+                           ((eqv? x (car T)) '())
+                           ((< x (car T)) (list (car T) (remove x (left T)) (right T)))
+                           (else (list (car T) (left T) (remove x (right T))))))
+
+; apply each function in the first list to the corresponding element in the second list
+; assume (= (length list_fns) (length list_vals))
+(define (applyeach list_fns list_vals) 
+        (define (applyeach_helper list_fns list_vals list_ret)
+                (if (null? list_fns) list_ret
+                    (applyeach_helper (cdr list_fns) (cdr list_vals) (append list_ret (list ((car list_fns) (car list_vals)))))))
+        (applyeach_helper list_fns list_vals '()))
+
+; return #t iff all values in L satisfy the predicate P
+(define (forall P L) (null? (reject P L)))
+
+; return #t iff some value in L satisfies P
+(define (exists P L) (not (null? (filter P L))))
