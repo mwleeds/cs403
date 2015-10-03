@@ -1,8 +1,9 @@
 ; code from in class and out of class
-(define (avg-iter sum L num)
-        (if (null? L) (/ sum num)
-            (avg-iter (+ sum (car L)) (cdr L) (+ num 1))))
-(define (average L) (avg-iter 0 L 0))
+(define (average L)
+        (define (avg-iter sum L num)
+                (if (null? L) (/ sum num)
+                    (avg-iter (+ sum (car L)) (cdr L) (+ num 1))))
+        (avg-iter 0 L 0))
 (define (square x) (* x x))
 
 ; mapping functions to lists
@@ -156,3 +157,9 @@
 
 ; return #t iff some value in L satisfies P
 (define (exists P L) (not (null? (filter P L))))
+
+; take the inner product of two lists using two binary operators
+; assume the lists are the same length
+(define (inner_product1 L1 L2 f g) (if (null? (cdr L1)) (g (car L1) (car L2))
+                                      (f (g (car L1) (car L2))
+                                         (inner_product1 (cdr L1) (cdr L2) f g))))
