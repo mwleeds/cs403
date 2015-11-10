@@ -17,7 +17,7 @@ female(sue).
 male(bill).
 male(john).
 % rules
-grandparent(X, Y) :- parent(X, Z), parent(X, Y).
+grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
 ancestor(X, Y) :- parent(X, Y).
 ancestor(X, Y) :- parent(X, Z), ancestor(Z, Y).
 sibling(X, Y) :- parent(Z, X), parent(Z, Y), X =/= Y.
