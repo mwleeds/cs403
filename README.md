@@ -1,4 +1,6 @@
-# A Short Survey of Programming Languages
+This repository contains code written while exploring Scheme, Haskell, Smalltalk, Prolog, and OpenMP.
+
+Additionally, here is a comparison of the defining features of various languages:
 
 A language is defined by its
 * primitive elements
@@ -7,10 +9,11 @@ A language is defined by its
 
 according to the MIT SICP Lecture 1A.
 
-This document seeks to explore various programming languages using that framework.
-
-## Python
 ## C
 ## C++
-## Scheme
 ## Haskell
+## Prolog
+## Python
+## Scheme
+## Smalltalk
+
