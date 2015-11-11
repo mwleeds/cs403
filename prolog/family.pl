@@ -5,37 +5,25 @@
 
 % parent means biological parent
 % generation -1
-parent(buppa, davidL).
-parent(buppa, greg).
-parent(buppa, wendy).
-parent(ama, david).
-parent(ama, greg).
-parent(ama, wendy).
-parent(poppi, libet).
-parent(poppi, leslie).
-parent(poppi, chris).
-parent(poppi, tricia).
-parent(poppi, davidG).
-parent(poppi, michael).
-parent(mimi, libet).
-parent(mimi, leslie).
-parent(mimi, chris).
-parent(mimi, tricia).
-parent(mimi, david).
-parent(mimi, michael).
-parent(happi, jason).
-parent(happi, josh).
-parent(happi, sk).
-parent(happi, laura).
+parent(buppa, ama, davidL).
+parent(buppa, ama, greg).
+parent(buppa, ama, wendy).
+parent(poppi, mimi, libet).
+parent(poppi, mimi, leslie).
+parent(poppi, mimi, chris).
+parent(poppi, mimi, tricia).
+parent(poppi, mimi, davidG).
+parent(poppi, mimi, michael).
+parent(larry, happi, jason).
+parent(larry, happi, josh).
+parent(larry, happi, sk).
+parent(larry, happi, laura).
 % generation 0
-parent(davidL, matthew).
-parent(davidL, maggie).
-parent(davidL, andrew).
-parent(libet, matthew).
-parent(libet, maggie).
-parent(libet, andrew).
-parent(tricia, craig).
-parent(tricia, franny).
+parent(davidL, libet, matthew).
+parent(davidL, libet, maggie).
+parent(davidL, libet, andrew).
+parent(tricia, craigSr, craig).
+parent(tricia, craigSr, franny).
 
 female(maggie).
 female(kathleen).
@@ -74,12 +62,15 @@ spouse(eddie, sk).
 husband(Husband, Spouse) :- male(Husband), spouse(Husband, Spouse).
 wife(Wife, Spouse) :- female(Wife), spouse(Wife, Spouse).
 
-% check if Parent1 and Parent2 have had kids together
-kids_together(Parent1, Parent2) :- parent(Parent1, Kid), parent(Parent2, Kid).
+parent(Parent, Child) :- parent(Parent, _, Child).
+parent(Parent, Child) :- parent(_, Parent, Child).
+
+son(Parent, Son) :- male(Son), parent(Parent, Son).
+daughter(Parent, Daughter) :- female(Daughter), parent(Parent, Daughter).
 
 step_parent(StepParent, Kid) :- parent(Parent, Kid), spouse(Parent, StepParent).
 
-sibling(Kid1, Kid2) :- parent(Parent, Kid1), parent(Parent, Kid2).
+sibling(Kid1, Kid2) :- parent(Parent, Kid1), parent(Parent, Kid2), Kid1 =\= Kid2.
 step_sibling(Kid1, Kid2) :- parent(Parent, Kid1), step_parent(Parent, Kid2).
 step_sibling(Kid2, Kid1) :- parent(Parent, Kid1), step_parent(Parent, Kid2).
 
@@ -100,3 +91,5 @@ parents_sibling(Adult, Kid) :- sibling(Adult, Parent), parent(Parent, Kid).
 aunt(Aunt, Kid) :- female(Aunt), parents_sibling(Aunt, Kid).
 uncle(Uncle, Kid) :- male(Uncle), parents_sibling(Uncle, Kid).
 
+niece(Niece, Adult) :- female(Niece), parents_sibling(Adult, Niece).
+nephew(Nephew, Adult) :- male(Nephew), parents_sibling(Adult, Nephew).
