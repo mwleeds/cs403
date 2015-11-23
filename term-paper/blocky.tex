@@ -4,6 +4,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
 \usepackage{listings}
+\usepackage[superscript,biblabel]{cite}
 
 \title{Blocky: A Generalized Blockchain-Oriented Programming Language}
 
@@ -15,7 +16,7 @@
 \maketitle
 
 \begin{abstract}
-Ever since 2009 when Satoshi Nakamoto released the first workable blockchain-based application, Bitcoin, the technology has been an area of much interest, research, and development both in academia and the private sector. While Bitcoin uses cryptographically linked "blocks" of transactions to transfer money over the Internet, the decentralized consensus technology can be applied to a wide range of problems from censorship-resistant content hosting to autonomous corporations to self-enforcing smart contracts. However there does not exist a common framework for the development of such apps with minimal effort on the developer's part and defined interoperability between them. Blocky seeks to fill this hole by providing a language for the creation of arbitrary blockchain applications.
+Ever since 2009 when Satoshi Nakamoto released the first workable blockchain-based application, Bitcoin, the technology has been an area of much interest, research, and development both in academia and the private sector. While Bitcoin uses cryptographically linked ``blocks" of transactions to transfer money over the Internet, the decentralized consensus technology can be applied to a wide range of problems from censorship-resistant content hosting to autonomous corporations to self-enforcing smart contracts. However there does not exist a common framework for the development of such apps with minimal effort on the developer's part and defined interoperability between them. Blocky seeks to fill this hole by providing a language for the creation of arbitrary blockchain-based applications.
 \end{abstract}
 
 \section{Introduction}
@@ -25,13 +26,17 @@ Bitcoin, Namecoin, Storj, and many other projects utilize very similar underlyin
 The Ethereum project seeks to provide a blockchain, cryptocurrency, and language for deploying arbitrary blockchain apps, but its language (Solidity) only works in that system, whereas Blocky programs could be used on a variety of blockchains (whose cryptographic ciphers and transaction validation rules may differ) without changing their code. This can be accomplished because Blocky defines a set of interfaces that valid programs must implement as well as restrictions on usable language features to ensure well-behaved programs that can serve a wide range of potential purposes. Differences between Blocky and Solidity will be discussed further in a later section.
 
 \section{The Blockchain Concept}
-As implemented in the Bitcoin project, a blockchain is an append-only list of transactions in which later records are cryptographically linked to earlier ones in order to make modifying history computationally unfeasible.
+As implemented in the Bitcoin project, a blockchain is an append-only list of transactions in which later records are cryptographically linked to earlier ones in order to make modifying history computationally unfeasible. A symmetric key scheme is used to prove ownership over finite resources (such as bitcoins). Specifically, a user signs enough information to determine the origin and destination of the resource to be transferred using their private key.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.7\textwidth]{transaction_chain.png}
 \caption{\label{fig:transaction_chain}This is a simplified representation of transaction verification\cite{nakamoto09}.}
 \end{figure}
+
+This concept of transactions is generalized in Blocky so they can be used not just to transfer ``coins" but to send messages to dapps that trigger operations.
+
+In addition to verifying individual transactions, cryptography must again be used to arrive at decentralized consensus as to which transactions are considered valid and have been executed. The primary mechanism for this is including the hash of the previous block when determining the hash of each block. This way, modifying the historical record of transactions without changing the hash values requires either knowledge of a major vulnerability in the algorithm that's used or a prohibitive amount of computing power (for brute forcing).
 
 \begin{figure}[h]
 \centering
@@ -41,7 +46,7 @@ As implemented in the Bitcoin project, a blockchain is an append-only list of tr
 
 \section{Blocky's Execution Environment}
 
-Blocky programs can execute on any computer running the software with a copy of the current blockchain. The host makes certain variables available to them, such as the current time and information about blockchain transactions. When a transaction occurs that has a message for a certain program, that program's \texttt{transact} method is called which validates the input and determines an appropriate course of action using its defined functions. The only "side-effects" programs can have outside of their own stack variables is by broadcasting their own transactions to the network.
+Blocky programs can execute on any computer running the software with a copy of the current blockchain. The host makes certain variables available to them, such as the current time and information about blockchain transactions. When a transaction occurs that has a message for a certain program, that program's \texttt{transact} method is called which validates the input and determines an appropriate course of action using its defined functions. The only ``side-effects" programs can have outside of their own stack variables is by broadcasting their own transactions to the network.
 
 \section{Desirable Language Qualities}
 
@@ -71,9 +76,11 @@ As mentioned above, efficient computation is an important consideration and much
 
 \section{Language Design and Specification}
 
-Blocky is designed to share a significant amount of syntax and semantics with C++. Similar to how classes are defined, dapps can be defined which have a single public method, \texttt{transact}, and any number of private methods. They can also have state which is represented by a key value store, but changes to that must occur through transactions.
+Blocky is designed to share a significant amount of syntax and semantics with C\texttt{++}. Apart from providing familiarity, this makes it well-suited for efficient numerical computations, which are likely to be common (for example, cryptographic operations will occur frequently).
+
+Similar to how classes are defined, \texttt{dapps} (decentralized applications) can be defined which have a single public method, \texttt{transact}, and any number of private methods. Here is the general layout of such a program:
 \begin{lstlisting}
-dapp MyDapp { // dapp = decentralized application
+dapp MyDapp {
   public:
     transact(fixed_size_message); // the primary entry point
   private:
@@ -81,16 +88,35 @@ dapp MyDapp { // dapp = decentralized application
 }
 \end{lstlisting}
 
+They can also have state which is represented by a key value store, but changes to that must occur through transactions.
 
+\subsection{Data Types}
+Variables in Blocky are statically typed--- their types must be declared before they can be used. This system makes the code more explicit and readable, and protects against implicit variable declarations that may be accidental. Unlike C, Blocky uses strong typing so variables cannot be cast to other types and must be treated as their declared types. This can catch errors at compile-time in which the wrong variable is used in a statement. Further, numeric data types must explicitly declare their size in bytes (i.e. \texttt{int32\_t} or \texttt{int256\_t}, not just \texttt{int}). This rule makes potential for arithmetic overflow more obvious and forces code to execute comparably on different architectures (at least in this regard).
+
+Static typing, strong typing, and explicit numeric types all lead to code that is more reliable, maintainable, and portable. 
+
+\subsection{Scopes}
 Scopes of variables available to Blocky programs:
 \begin{itemize}
   \item{variables in their own stack and key-value store}
   \item{variables defined by the host, such as the current time}
   \item{blockchain-level variables which include information about transactions}
 \end{itemize}
-As with C++, \texttt{this} is used to access "class" variables. Analogously, \texttt{host} and \texttt{chain} are used to access variables in the other scopes mentioned.
+As with C\texttt{++}, \texttt{this} is used to access class (dapp) variables. Analogously, \texttt{host} and \texttt{chain} are used to access variables in the other scopes mentioned.
 \newline
 
+\subsection{Major Restrictions Relative to C\texttt{++}}
+\begin{itemize}
+  \item{\texttt{while} loops are not permitted}
+  \item{\texttt{for} loops must have a deterministic invariant that will lead to termination}
+  \item{\texttt{GOTO} statements and \texttt{switch} statements are not permitted}
+  \item{Code is not permitted to access anything outside its own data and that of the blockchain (filesystem, network, etc)}
+  \item{Code must implement the \texttt{transact} method}
+  \item{strong typing}
+  \item{Function arguments can differ at run-time}
+\end{itemize}
+
+\subsection{Compilation}
 Steps taken by the Blocky compiler:
 \begin{enumerate}
   \item{Remove comments and whitespace}
@@ -100,15 +126,6 @@ Steps taken by the Blocky compiler:
   \item{Do termination analysis to guarantee finite computation time (check \texttt{for} loop invariants, etc)}
   \item{Dynamically link the code based on the blockchain addresses of dapps that are transacted with}
 \end{enumerate}
-
-Restrictions on possible code:
-\begin{itemize}
-  \item{\texttt{while} loops are not permitted}
-  \item{\texttt{for} loops must have a deterministic invariant that will lead to termination}
-  \item{\texttt{GOTO} statements and \texttt{switch} statements are not permitted}
-  \item{Code is not permitted to access anything outside its own data and that of the blockchain (filesystem, network, etc)}
-  \item{Code must implement the \texttt{transact} method}
-\end{itemize}
 
 \section{Examples}
 
@@ -124,10 +141,10 @@ Some examples of decentralized apps that could be built using Blocky:
 
 Primary differences:
 \begin{itemize}
-  \item{Solidity code requires a virtual machine; Blocky code does not.}
-  \item{Ethereum Virtual Machine instructions are restricted to 256-bit word operations.}
-  \item{Addresses in Solidity are restricted to 160 bits.}
-  \item{Solidity contracts must use Ether.}
+  \item{Solidity code requires a virtual machine\cite{ethereum15}; Blocky code does not.}
+  \item{Ethereum Virtual Machine instructions are restricted to 256-bit word operations\cite{ethereum15}.}
+  \item{Addresses in Solidity are restricted to 160 bits\cite{ethereum15}.}
+  \item{Solidity contracts must use Ether\cite{ethereum15}.}
 \end{itemize}
 
 \section{Potential Improvements}
@@ -135,23 +152,27 @@ To afford scalability, a mechanism could be provided so programs would only need
 
 \begin{thebibliography}{9}
 
+\bibitem{nakamoto09}
+  Satoshi Nakamoto,
+  ``Bitcoin: A Peer-to-Peer Electronic Cash System",
+  http://bitcoin.org/bitcoin.pdf
+  
 \bibitem{turing37}
   Alan Turing,
-  "On Computable Numbers, With an Application to the Entscheidungs Problem",
+  ``On Computable Numbers, With an Application to the Entscheidungs Problem",
   Proc. London Math. Soc. (1937) s2-42 (1): 230-265.
   doi: 10.1112/plms/s2-42.1.230.
   
 \bibitem{plant15}
   Luke Plant,
-  "We Need Less Powerful Languages",
+  ``We Need Less Powerful Languages",
   Published 14 November 2015.
   http://lukeplant.me.uk/blog/posts/less-powerful-languages/.
   
-\bibitem{nakamoto09}
-  Satoshi Nakamoto,
-  "Bitcoin: A Peer-to-Peer Electronic Cash System",
-  http://bitcoin.org/bitcoin.pdf
-  
+\bibitem{ethereum15}
+  Solidity Documentation
+  https://ethereum.github.io/solidity/docs/home/
+
 \end{thebibliography}
   
 \end{document}
