@@ -10,7 +10,7 @@
 
 \author{Matthew Leeds (mwleeds@crimson.ua.edu)}
 
-\date{\today}
+\date{November 23, 2015}
 
 \begin{document}
 \maketitle
@@ -20,6 +20,52 @@ Ever since 2009 when Satoshi Nakamoto released the first workable blockchain-bas
 \end{abstract}
 
 \section{Introduction}
-\todo{content}
 
+\section{Desirable Language Qualities}
+
+The constraints and requirements of a blockchain ecosystem roughly dictate the following qualities that would maximize the usefulness of Blocky:
+\begin{itemize}
+\item{Guaranteed termination or restricted computation time}
+\item{Turing completeness or as close as possible}
+\item{Access to relevant blockchain information}
+\item{No access to other resources on the host computer}
+\item{Familiarity for users of existing languages}
+\item{A library of useful modules}
+\item{A balance between efficiency and ease-of-use}
+\end{itemize}
+
+The first and second points represent an unavoidable trade-off between arbitrary computation (Turing completeness) and guaranteed termination. Restricted computation time is important so that users cannot craft malicious or naive code that uses the computational resources of the host computer for an indefinite period of time. While a scheme could be devised to pay for such resources using a finite cryptocurrency, this could still put an undue burden on users with less powerful computers. Unfortunately the only way to guarantee termination is to make the language less than Turing complete, meaning it will be possible to implement certain classes of algorithms.
+
+The third and fourth points regarding access to information are primarily security concerns. If peers could run truly arbitrary code on each other's computers, this would very quickly lead to OS vulnerabilities being exploited and clients could easily be compromised by malicious actors. But data access cannot be restricted entirely because programs must at least be able to send and receive information relevant to their activities in order for the system to be useful. By specifying well-defined interfaces for such messages, Blocky solves this problem.
+
+To reduce the learning curve and speed adoption, the language should feel familiar to users of popular languages, at least in its basic syntax, and ideally in its semantics to the extent possible. Compiling to an existing language accomplishes this aim as many people already have some knowledge of how to use it.
+
+To maximize usefulness the language should have a set of available modules comparable to the ones available for Python, Perl, and many others that support common tasks such as evaluation of non-trivial mathematical functions and parsing of regular expressions. By compiling to an existing language, we can avoid having to rewrite this technical infrastructure.
+
+As mentioned above, efficient computation is an important consideration and much could be learned from C-style languages in this regard. But ease-of-use is arguably equally important because it makes developers more productive, as idealized by Python. Blocky seeks to arrive at a reasonable balance between these two extremes.
+
+\section{Language Design}
+
+\section{Examples}
+
+\section{Comparison to Solidity}
+
+\section{Potential Improvements}
+
+\begin{thebibliography}{9}
+
+\bibitem{turing37}
+  Alan Turing,
+  "On Computable Numbers, With an Application to the Entscheidungs Problem",
+  Proc. London Math. Soc. (1937) s2-42 (1): 230-265.
+  doi: 10.1112/plms/s2-42.1.230.
+  
+\bibitem{plant15}
+  Luke Plant,
+  "We Need Less Powerful Languages",
+  Published 14 November 2015.
+  http://lukeplant.me.uk/blog/posts/less-powerful-languages/.
+  
+\end{thebibliography}
+  
 \end{document}
