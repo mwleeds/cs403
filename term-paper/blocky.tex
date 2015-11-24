@@ -56,39 +56,38 @@ The constraints and requirements of a blockchain ecosystem roughly dictate the f
   \item{Turing completeness or as close as possible}
   \item{Access to relevant blockchain information}
   \item{No access to other resources on the host computer}
-  \item{Definition of a standard interface for communication between apps}
+  \item{Definition of a standard interface for communication between dapps}
   \item{Familiarity for users of existing languages}
-  \item{A library of useful modules}
-  \item{A balance between efficiency and ease-of-use}
+  \item{Generality to (almost) any blockchain}
 \end{itemize}
 
-The first and second points represent an unavoidable trade-off between arbitrary computation (Turing completeness) and guaranteed termination. Restricted computation time is important so that users cannot craft malicious or naive code that uses the computational resources of the host computer for an indefinite period of time. Unfortunately the only way to guarantee termination is to make the language less than Turing complete, meaning it will be possible to implement certain classes of algorithms\cite{turing37}. Limiting the language's expressiveness also means the code can be more easily understood, both by humans and computers\cite{plant15}.
+The first and second points represent an unavoidable trade-off between arbitrary computation (Turing completeness) and guaranteed termination. Restricted computation time is important so that users cannot craft malicious or naive code that uses the computational resources of the host computer for an indefinite period of time. Unfortunately the only way to guarantee termination is to make the language less than Turing complete, meaning it will be impossible to implement certain classes of algorithms\cite{turing37}. Limiting the language's expressiveness also means the code can be more easily understood, both by humans and computers\cite{plant15}.
 
 The third and fourth points regarding access to information are primarily security concerns. If peers could run truly arbitrary code on each other's computers, this would very quickly lead to OS vulnerabilities being exploited and clients could easily be compromised by malicious actors. But data access cannot be restricted entirely because programs must at least be able to send and receive information relevant to their activities in order for the system to be useful. By specifying well-defined interfaces for such messages, Blocky solves this problem.
 
 If an interface for communication between program instances is defined by the language rather than individual projects, it will be more universal and therefore reduce unnecessary compatibility issues.
 
-To reduce the learning curve and speed adoption, the language should feel familiar to users of popular languages, at least in its basic syntax, and ideally in its semantics to the extent possible. Compiling to an existing language accomplishes this aim as many people already have some knowledge of how to use it.
+To reduce the learning curve and speed adoption, the language should feel familiar to users of popular languages, at least in its basic syntax, and ideally in its semantics to the extent possible. Blocky accomplishes this by staying close to the C\texttt{++} standard.
 
-To maximize usefulness the language should have a set of available modules comparable to the ones available for Python, Perl, and many others that support common tasks such as evaluation of non-trivial mathematical functions and parsing of regular expressions. By compiling to an existing language, we can avoid having to rewrite this technical infrastructure.
-
-As mentioned above, efficient computation is an important consideration and much could be learned from C-style languages in this regard. But ease-of-use is arguably equally important because it makes developers more productive, as idealized by Python. Blocky seeks to arrive at a reasonable balance between these two extremes.
+Blocky should be usable for as many blockchain systems as possible so that developers can reuse code and easily migrate between networks if such a need arises.
 
 \section{Language Design and Specification}
 
 Blocky is designed to share a significant amount of syntax and semantics with C\texttt{++}. Apart from providing familiarity, this makes it well-suited for efficient numerical computations, which are likely to be common (for example, cryptographic operations will occur frequently).
 
-Similar to how classes are defined, \texttt{dapps} (decentralized applications) can be defined which have a single public method, \texttt{transact}, and any number of private methods. Here is the general layout of such a program:
+Similar to how classes are defined, \texttt{dapps} (decentralized applications) can be defined which have a single public method, \texttt{transact}, and any number of private methods. A third classification for methods exists, \texttt{reusable}, which means those methods can be called by other dapps but execute in the context of the caller (whereas \texttt{public} methods execute in the context of the dapp that defined them). Here is the general layout of such a program:
 \begin{lstlisting}
 dapp MyDapp {
   public:
-    transact(fixed_size_message); // the primary entry point
+    // transact is the primary interface for other dapps
+    void transact(fixed type caller, type message);
+  reusable:
+    // methods that can be called by other dapps
   private:
     // possibly other helper functions
 }
 \end{lstlisting}
-
-They can also have state which is represented by a key value store, but changes to that must occur through transactions.
+where \texttt{type} would be an actual data type. The \texttt{fixed} keyword indicates that a function parameter isn't explicitly passed in by the caller but added by the Blocky software. For example I may call \texttt{otherDapp.transact("hello");} and the other dapp would receive ``hello" in \texttt{message}, and my blockchain address in \texttt{caller}.
 
 \subsection{Data Types}
 Variables in Blocky are statically typed--- their types must be declared before they can be used. This system makes the code more explicit and readable, and protects against implicit variable declarations that may be accidental. Unlike C, Blocky uses strong typing so variables cannot be cast to other types and must be treated as their declared types. This can catch errors at compile-time in which the wrong variable is used in a statement. Further, numeric data types must explicitly declare their size in bytes (i.e. \texttt{int32\_t} or \texttt{int256\_t}, not just \texttt{int}). This rule makes potential for arithmetic overflow more obvious and forces code to execute comparably on different architectures (at least in this regard).
@@ -102,30 +101,33 @@ Scopes of variables available to Blocky programs:
   \item{variables defined by the host, such as the current time}
   \item{blockchain-level variables which include information about transactions}
 \end{itemize}
-As with C\texttt{++}, \texttt{this} is used to access class (dapp) variables. Analogously, \texttt{host} and \texttt{chain} are used to access variables in the other scopes mentioned.
-\newline
+Stack variables are only available for the duration of each execution. The key-value store provides persistent storage that can be modified via transactions. It is initialized at compile-time with the owner(s)' public key(s). Such values can be accessed using \texttt{this} since they are the dapp's only ``member" variables. Analogously, \texttt{host} and \texttt{chain} are used as prefixes to access variables in the other scopes mentioned. Of course the latter two scopes of variables are strictly read-only.
 
 \subsection{Major Restrictions Relative to C\texttt{++}}
+If any of the following conditions are broken, compilation will fail:
 \begin{itemize}
-  \item{\texttt{while} loops are not permitted}
-  \item{\texttt{for} loops must have a deterministic invariant that will lead to termination}
-  \item{\texttt{GOTO} statements and \texttt{switch} statements are not permitted}
-  \item{Code is not permitted to access anything outside its own data and that of the blockchain (filesystem, network, etc)}
-  \item{Code must implement the \texttt{transact} method}
-  \item{strong typing}
-  \item{Function arguments can differ at run-time}
+  \item{\texttt{for} loops must have a deterministic invariant that will lead to termination.}
+  \item{\texttt{GOTO}, \texttt{switch}, and \texttt{while} statements are not permitted.}
+  \item{Code is not permitted to access anything outside its own data and that of the blockchain (filesystem, network, etc).}
+  \item{Code must implement the \texttt{transact} method and no other \texttt{public} methods.}
 \end{itemize}
 
 \subsection{Compilation}
 Steps taken by the Blocky compiler:
 \begin{enumerate}
-  \item{Remove comments and whitespace}
-  \item{Validate the syntax of the code (check brackets, semicolons, etc)}
-  \item{Ensure that no side-effects are allowed outside of the dapp and blockchain}
-  \item{Ensure all data types are properly bounded (i.e. 32 bit integers)}
-  \item{Do termination analysis to guarantee finite computation time (check \texttt{for} loop invariants, etc)}
-  \item{Dynamically link the code based on the blockchain addresses of dapps that are transacted with}
+  \item{Remove comments and whitespace.}
+  \item{Validate the syntax of the code (check brackets, semicolons, etc).}
+  \item{Ensure that no side-effects are allowed outside of the dapp and blockchain.}
+  \item{Do type checking.}
+  \item{Do termination analysis to guarantee finite computation time (check \texttt{for} loop invariants, etc).}
+  \item{Initialize the dapp's key-value store with the owner(s)' public key(s).}
+  \item{Compile and dynamically link the code based on the blockchain addresses of dapps whose \texttt{public} or \texttt{reusable} methods are called.}
 \end{enumerate}
+
+Upon successful compilation, the user can publish their app into the blockchain using a transaction.
+
+\subsection{Built-in functions}
+To make simple dapps possible without depending on \texttt{reusable} methods or re-implementing such things, Blocky provides common math functions (\texttt{power}, \texttt{sine}, \texttt{log}, etc) as well as standard cryptographic ciphers (\texttt{AES}, \texttt{SHA}, etc).
 
 \section{Examples}
 
@@ -135,16 +137,24 @@ Some examples of decentralized apps that could be built using Blocky:
   \item{A trustless exchange system for real-world goods and services (assuming there exists a reliable out-of-band way to verify receipt of such goods)}
   \item{A trustless crowdfunding platform}
   \item{A censorship-resistant content hosting platform}
+  \item{An encrypted, redundant storage network}
+  \item{A fully democratically run corporation}
+  \item{A provably fair gambling system}
 \end{itemize}
 
-\section{Comparison to Solidity}
+Let's look at the code for some of these.
+\subsection{A Storage System}
+\subsection{Delayed Purchasing}
+\subsection{Simple Content Hosting}
 
-Primary differences:
+\section{Comparison to Solidity}
+Ethereum is a project that aims to provide a blockchain to support the execution of smart contracts, which can be thought of as autonomous agents that can be programmed in a Turing-complete language, Solidity. Blocky seeks to solve roughly the same problem, but in a more general way. Here are the primary differences between the two languages:
 \begin{itemize}
   \item{Solidity code requires a virtual machine\cite{ethereum15}; Blocky code does not.}
-  \item{Ethereum Virtual Machine instructions are restricted to 256-bit word operations\cite{ethereum15}.}
-  \item{Addresses in Solidity are restricted to 160 bits\cite{ethereum15}.}
-  \item{Solidity contracts must use Ether\cite{ethereum15}.}
+  \item{Ethereum Virtual Machine instructions are restricted to 256-bit word operations\cite{ethereum15}. Blocky code can be compiled to any architecture.}
+  \item{Addresses in Solidity are restricted to 160 bits\cite{ethereum15}. They can be any length in Blocky.}
+  \item{Solidity contracts must use Ether\cite{ethereum15}. Blocky dapps can use any cryptocurrency.}
+  \item{Library methods are integrated into Blocky dapps rather than being separate constructs.}
 \end{itemize}
 
 \section{Potential Improvements}
