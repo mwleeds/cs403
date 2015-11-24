@@ -5,6 +5,7 @@
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage[superscript,biblabel]{cite}
+\usepackage[T1]{fontenc}
 
 \title{Blocky: A Generalized Blockchain-Oriented Programming Language}
 
@@ -16,7 +17,7 @@
 \maketitle
 
 \begin{abstract}
-Ever since 2009 when Satoshi Nakamoto released the first workable blockchain-based application, Bitcoin, the technology has been an area of much interest, research, and development both in academia and the private sector. While Bitcoin uses cryptographically linked ``blocks" of transactions to transfer money over the Internet, the decentralized consensus technology can be applied to a wide range of problems from censorship-resistant content hosting to autonomous corporations to self-enforcing smart contracts. However there does not exist a common framework for the development of such apps with minimal effort on the developer's part and defined interoperability between them. Blocky seeks to fill this hole by providing a language for the creation of arbitrary blockchain-based applications.
+Ever since 2009 when Satoshi Nakamoto released the first workable blockchain-based application, Bitcoin, the technology has been an area of much interest, research, and development. While Bitcoin uses cryptographically linked ``blocks" of transactions to transfer money over the Internet, its decentralized consensus technology can be applied to a wide range of problems from censorship-resistant content hosting to trustless exchange systems. However there does not exist a common framework for the development of such apps with minimal effort on the developer's part and defined interoperability between them. Blocky seeks to fill this hole by providing a language for the creation of arbitrary blockchain-based applications.
 \end{abstract}
 
 \section{Introduction}
@@ -34,7 +35,7 @@ As implemented in the Bitcoin project, a blockchain is an append-only list of tr
 \caption{\label{fig:transaction_chain}This is a simplified representation of transaction verification\cite{nakamoto09}.}
 \end{figure}
 
-This concept of transactions is generalized in Blocky so they can be used not just to transfer ``coins" but to send messages to dapps that trigger operations.
+This concept of transactions is generalized in Blocky so they can be used not just to transfer ``coins" (a special case of a finite, fungible resource) but to send messages to dapps that trigger operations.
 
 In addition to verifying individual transactions, cryptography must again be used to arrive at decentralized consensus as to which transactions are considered valid and have been executed. The primary mechanism for this is including the hash of the previous block when determining the hash of each block. This way, modifying the historical record of transactions without changing the hash values requires either knowledge of a major vulnerability in the algorithm that's used or a prohibitive amount of computing power (for brute forcing).
 
@@ -75,7 +76,7 @@ Blocky should be usable for as many blockchain systems as possible so that devel
 
 Blocky is designed to share a significant amount of syntax and semantics with C\texttt{++}. Apart from providing familiarity, this makes it well-suited for efficient numerical computations, which are likely to be common (for example, cryptographic operations will occur frequently).
 
-Similar to how classes are defined, \texttt{dapps} (decentralized applications) can be defined with public methods which are callable using transactions, and any number of private methods. A third classification for methods exists, \texttt{reusable}, which means those methods can be called by other dapps but execute in the context of the caller (whereas \texttt{public} methods execute in the context of the dapp that defined them). Here is the general layout of such a program (header file):
+Similar to how classes are defined, \texttt{dapps} (decentralized applications) can be defined with public methods which are callable via transactions, and any number of private methods. A third classification for methods exists, \texttt{reusable}, which means those methods can be called by other dapps but execute in the context of the caller (whereas \texttt{public} methods execute in the context of the dapp that defined them). Here is the general layout of such a program (header file):
 \begin{lstlisting}
 dapp MyDapp {
   public:
@@ -102,7 +103,7 @@ Variables in Blocky are statically typed--- their types must be declared before 
 Static typing, strong typing, and explicit numeric types all lead to code that is more reliable, maintainable, and portable. 
 
 \subsection{Scopes}
-Scopes of variables available to Blocky programs:
+Here are the scopes of variables available to Blocky programs:
 \begin{itemize}
   \item{variables in their own stack and key-value store}
   \item{variables defined by the host, such as the current time}
@@ -118,6 +119,19 @@ If any of the following conditions are broken, compilation will fail:
   \item{Code is not permitted to access anything outside its own data and that of the blockchain (filesystem, network, etc).}
 \end{itemize}
 
+\subsection{Comparison to Solidity}
+As mentioned above, Ethereum is a project that aims to provide a blockchain to support the execution of smart contracts, which can be thought of as autonomous agents that can be programmed in a Turing-complete language, Solidity. Blocky seeks to solve roughly the same problem, but in a more general way. Here are the primary differences between the two languages:
+\begin{itemize}
+  \item{Blocky is more flexible as to what constitutes a valid transaction.}
+  \item{Solidity code requires a virtual machine\cite{ethereum15}; Blocky code does not.}
+  \item{Ethereum Virtual Machine instructions are restricted to 256-bit word operations\cite{ethereum15}. Blocky code can be compiled to any architecture.}
+  \item{Addresses in Solidity are restricted to 160 bits\cite{ethereum15}. They can be any length in Blocky.}
+  \item{Solidity contracts must use Ether\cite{ethereum15}. Blocky dapps can use any cryptocurrency.}
+  \item{Library methods are integrated into Blocky dapps rather than being separate constructs.}
+  \item{Function decorators are used to control access in Blocky, moving the responsibility of checking memory addresses from the dapp developer to the Blocky software.}
+  \item{The caret notation for specifying maximum input size is unique to Blocky.}
+\end{itemize}
+
 \subsection{Compilation}
 Steps taken by the Blocky compiler:
 \begin{enumerate}
@@ -130,7 +144,7 @@ Steps taken by the Blocky compiler:
   \item{Compile and dynamically link the code based on the blockchain addresses of dapps whose \texttt{public} or \texttt{reusable} methods are called.}
 \end{enumerate}
 
-Upon successful compilation, the user can publish their app into the blockchain using a transaction.
+Upon successful compilation, the user can publish their app into the blockchain using a transaction. Ideally there should be a way to produce deterministic builds so that users who compile from sources can check that their binary matches byte-for-byte with the official one for the same architecture, reducing the potential for malicious tampering.
 
 \subsection{Built-in functions}
 To make simple dapps possible without depending on \texttt{reusable} methods or re-implementing such things, Blocky provides common math functions (\texttt{power}, \texttt{sine}, \texttt{log}, etc) as well as standard cryptographic ciphers (\texttt{AES}, \texttt{SHA}, etc).
@@ -153,18 +167,20 @@ Some examples of decentralized apps that could be built using Blocky:
   \item{A provably fair gambling system}
   \item{Time-dependent transactions}
 \end{itemize}
-
-Let's look at the code for some of these.
+\bigskip
+Let's look at code for some of these.
 \subsection{A Gambling System}
 \begin{lstlisting}
 dapp Gambler {
   public:
     Gambler { uint64_t this.balance = 0; }
+    
     @owner
     withdraw_balance() { // the owner can withdraw at any time
       if (this.balance > 0)
         transact(this.addr, this.owner, {"amount": this.balance});
     }
+    
     @everyone
     int8_t gamble(uint256_t better, uint32_t amount) {
       if (chain.block_hash % host.time == 0) { // winner takes all
@@ -206,11 +222,12 @@ As you can see, this dapp ensures that a purchase will occur at a certain date (
 dapp ContentHost {
   public:
     ContentHost { string -> bytes[^1024] storage = []; }
+    
     @owner
-    int8_t put_content(string key, bytes[^1024] value) {
+    put_content(string key, bytes[^1024] value) {
       this.storage[key] = value;
-      return 0;
     }
+    
     @everyone
     bytes[] get_content(string key) {
       if (key in this.storage)
@@ -223,7 +240,7 @@ dapp ContentHost {
 In the code above, the caret before 1024 is a way to specify a maximum input size. This requirement is enforced by transaction validation code on clients.
 \newline
 
-\subsection{Project Crowdfunding}
+\subsection{Trustless Crowdfunding}
 \begin{lstlisting}
 dapp Crowdfund {
   public:
@@ -233,6 +250,7 @@ dapp Crowdfund {
       // here is the syntax for defining a mapping
       uint16_t -> uint16_t this.funders = [];
     }
+    
     @owner
     int8_t release_money() {
       if (this.balance >= this.funding_goal) {
@@ -247,6 +265,7 @@ dapp Crowdfund {
         return 1;
       }
     }
+    
     @everyone
     contribute(uint256_t src, uint16_t amount) {
       transact(src, this.addr, amount);
@@ -268,6 +287,7 @@ dapp DemCorp {
       // require 2/3 agreement for action on something
       uint16_t this.action_threshold = 0.66 * this.owners.length;
     }
+    
     @owner // this includes all shareholders
     vote_for_motion(uint256_t motion) {
       if (motion not in this.motions)
@@ -279,13 +299,17 @@ dapp DemCorp {
         transact(this.addr, motion, {});
       }
     }
+    
     @owner
     add_owner(uint256_t new_owner) {
-      this.owner.append(new_owner);
+      if (new_owner not in this.owner)
+        this.owner.append(new_owner);
     }
+    
     @owner
     remove_owner(uint256_t existing_owner) {
-      this.owner.remove(existing_owner);
+      if (existing_owner in this.owner)
+        this.owner.remove(existing_owner);
     }
 }
 \end{lstlisting}
@@ -314,18 +338,6 @@ dapp BlockchainLib {
 \end{lstlisting}
 Of course production-quality libraries are likely to be longer and more robust, but this provides a simple example of a reusable function that uses the blockchain and its calling dapp's address to calculate a balance.
 \newline
-
-\section{Comparison to Solidity}
-Ethereum is a project that aims to provide a blockchain to support the execution of smart contracts, which can be thought of as autonomous agents that can be programmed in a Turing-complete language, Solidity. Blocky seeks to solve roughly the same problem, but in a more general way. Here are the primary differences between the two languages:
-\begin{itemize}
-  \item{Solidity code requires a virtual machine\cite{ethereum15}; Blocky code does not.}
-  \item{Ethereum Virtual Machine instructions are restricted to 256-bit word operations\cite{ethereum15}. Blocky code can be compiled to any architecture.}
-  \item{Addresses in Solidity are restricted to 160 bits\cite{ethereum15}. They can be any length in Blocky.}
-  \item{Solidity contracts must use Ether\cite{ethereum15}. Blocky dapps can use any cryptocurrency.}
-  \item{Library methods are integrated into Blocky dapps rather than being separate constructs.}
-  \item{Function decorators are used to control access in Blocky, moving the responsibility of checking memory addresses from the dapp developer to the Blocky software.}
-  \item{The caret notation for specifying maximum input size is unique to Blocky.}
-\end{itemize}
 
 \section{Potential Improvements}
 To afford scalability, a mechanism could be provided so programs would only need to be executed on a subset of participating nodes, rather than the entire network. Similarly, a mechanism for parallelizing code would help Blocky make more efficient use of available resources.
