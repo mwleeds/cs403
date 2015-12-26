@@ -27,7 +27,7 @@ Bitcoin, Namecoin, Storj, and many other projects utilize very similar underlyin
 The Ethereum project seeks to provide a blockchain, cryptocurrency, and language for deploying arbitrary blockchain apps, but its language (Solidity) only works in that system, whereas Blocky programs could be used on a variety of blockchains (whose cryptographic ciphers and transaction validation rules may differ) without changing their code. This can be accomplished because Blocky defines a set of interfaces that valid programs must implement as well as restrictions on usable language features to ensure well-behaved programs that can serve a wide range of potential purposes. Differences between Blocky and Solidity will be discussed further in a later section.
 
 \section{The Blockchain Concept}
-As implemented in the Bitcoin project, a blockchain is an append-only list of transactions in which later records are cryptographically linked to earlier ones in order to make modifying history computationally unfeasible. A symmetric key scheme is used to prove ownership over finite resources (such as bitcoins). Specifically, a user signs enough information to determine the origin and destination of the resource to be transferred using their private key.
+As implemented in the Bitcoin project, a blockchain is an append-only list of transactions in which later records are cryptographically linked to earlier ones in order to make modifying history computationally unfeasible. An asymmetric key scheme is used to prove ownership over finite resources (such as bitcoins). Specifically, a user signs enough information to determine the origin and destination of the resource to be transferred using their private key.
 
 \begin{figure}[h]
 \centering
